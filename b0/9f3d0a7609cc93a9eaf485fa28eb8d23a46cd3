@@ -1,0 +1,39 @@
+frame.js
+  s_d4319cf6aad043::t_491d577e70e12f 1-167
+shelf.js
+  s_d4319cf6aad043::t_58a4d8aa8ec72f 1-38
+extension.js
+  s_d4319cf6aad043::t_b8b3bf6be53981 1-352
+package.json
+  s_d4319cf6aad043::t_796da6acc61f02 1-83
+epub.js
+  s_d4319cf6aad043::t_5b45586a0c463a 1-385
+fake.js
+  s_d4319cf6aad043::t_461de503227716 1-104
+README.md
+  s_d4319cf6aad043::t_37dd0914091b13 1-101
+package-lock.json
+  s_d4319cf6aad043::t_8afc9a4f1951c5 1-2243
+resources/icon.svg
+  s_d4319cf6aad043::t_21f25e32a4ff4d 1-4
+LICENSE
+  s_d4319cf6aad043::t_e15c2a13142a61 1-2
+.gitignore
+  s_d4319cf6aad043::t_9eba9dccab631a 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b09f3d0a7609cc93a9eaf485fa28eb8d23a46cd3",
+  "prompts": {},
+  "sessions": {
+    "s_d4319cf6aad043": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "59ca46d9-111c-4a9b-8e8b-6592f4c7ba98",
+        "model": "glm-5.3"
+      },
+      "human_author": "qihang <qibing.gong@hipac.cn>"
+    }
+  }
+}
