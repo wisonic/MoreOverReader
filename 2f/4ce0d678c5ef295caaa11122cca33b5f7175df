@@ -1,0 +1,19 @@
+README.md
+  s_d4319cf6aad043::t_e0b93dd3070cf9 7-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "2f4ce0d678c5ef295caaa11122cca33b5f7175df",
+  "prompts": {},
+  "sessions": {
+    "s_d4319cf6aad043": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "59ca46d9-111c-4a9b-8e8b-6592f4c7ba98",
+        "model": "glm-5.3"
+      },
+      "human_author": "wisonic <4225692+wisonic@users.noreply.github.com>"
+    }
+  }
+}
