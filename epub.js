@@ -104,6 +104,10 @@ function imgMime(path) {
   return MIME[path.split('.').pop().toLowerCase()] || 'application/octet-stream';
 }
 
+function isGenericDocumentTitle(title) {
+  return /^(?:text|part|chapter|section|content|index|file)[_\s-]*\d*(?:[_\s-]*(?:split|part)[_\s-]*\d+)?\.x?html?$/i.test(title);
+}
+
 function stripTags(s) {
   return decodeEntities(String(s).replace(/<[^>]+>/g, ''));
 }
@@ -243,6 +247,19 @@ function removeNotesFromBody(html, notes) {
   );
 }
 
+/** Extract NCX navigation labels keyed by the target XHTML path. */
+function extractNcxTitles(ncx, baseDir) {
+  const titles = new Map();
+  const re = /<navPoint\b[^>]*>[\s\S]*?<navLabel\b[^>]*>\s*<text\b[^>]*>([\s\S]*?)<\/text>[\s\S]*?<\/navLabel>[\s\S]*?<content\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  let m;
+  while ((m = re.exec(ncx)) !== null) {
+    const label = stripTags(m[1]).replace(/\s+/g, ' ').trim();
+    const target = resolvePath(baseDir, m[2]);
+    if (label && target && !titles.has(target)) titles.set(target, label);
+  }
+  return titles;
+}
+
 /**
  * XHTML chapter → { title, blocks, notes }.
  * blocks: {t:'l',text} | {t:'img',src} — images split the text flow.
@@ -251,6 +268,16 @@ function xhtmlToBlocks(html, resolveImg, resolveNote) {
   let title = '';
   const tm = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
   if (tm) title = stripTags(tm[1]).replace(/\s+/g, ' ').trim();
+  // Many converter-produced EPUBs use titles such as "text00007.html" for
+  // every XHTML file. They are implementation filenames, not useful table of
+  // contents labels; prefer the first visible heading in that case.
+  if (!title || isGenericDocumentTitle(title)) {
+    const hm = /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/i.exec(html);
+    if (hm) {
+      const heading = stripTags(hm[1]).replace(/\s+/g, ' ').trim();
+      if (heading) title = heading;
+    }
+  }
 
   const notes = extractNotes(html);
   const noteRefs = extractNoteRefs(html, notes, resolveNote);
@@ -320,6 +347,11 @@ function parseEpub(buffer) {
     });
   }
 
+  const ncxItem = [...items.values()].find(item => /ncx/i.test(item.media));
+  const ncxTitles = ncxItem ? extractNcxTitles(
+    (get(resolvePath(opfDir, ncxItem.href)) || Buffer.alloc(0)).toString('utf8'), opfDir,
+  ) : new Map();
+
   const resolveImg = (ref) => {
     const p = resolvePath(opfDir, ref);
     // try relative to OPF dir first, then as-is (chapter-relative refs come pre-resolved
@@ -371,7 +403,14 @@ function parseEpub(buffer) {
     }, resolveNote);
     const lines = blocks.reduce((n, b) => n + (b.t === 'l' ? 1 : 0), 0);
     if (!blocks.length) continue;
-    chapters.push({ title: title || item.href, blocks, notes, noteRefs, lines });
+    const navTitle = ncxTitles.get(filePath);
+    const displayTitle = (!title || isGenericDocumentTitle(title)) ? (navTitle || title) : title;
+    chapters.push({
+      title: displayTitle || item.href, blocks, notes, noteRefs, lines,
+      // Keep the spine document readable, but let the UI distinguish entries
+      // deliberately published in the book's navigation from auxiliary pages.
+      tocListed: ncxTitles.has(filePath),
+    });
   }
   if (!chapters.length) throw new Error('EPUB 里没有可读的章节内容');
 
@@ -380,6 +419,6 @@ function parseEpub(buffer) {
 
 module.exports = {
   parseEpub, xhtmlToBlocks, extractNotes, extractNoteRefs, removeNotesFromBody,
-  normalizeNoteMarkers, noteNumber,
+  normalizeNoteMarkers, noteNumber, extractNcxTitles,
   resolvePath, decodeEntities, stripTags,
 };

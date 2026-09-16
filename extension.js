@@ -35,9 +35,15 @@ function buildBook(filePath, bookTitle, chapters) {
     chs.push({
       title: ch.title, start, end: flat.length,
       notes: ch.notes || [], noteRefs: ch.noteRefs || {},
+      tocListed: !!ch.tocListed,
     });
   });
-  return { filePath, title: bookTitle || path.basename(filePath), flat, chapters: chs, total: flat.length };
+  // The spine can include cover, copyright and colophon XHTML files. If the
+  // EPUB supplies a formal NCX/nav table of contents, use it for `j`; otherwise
+  // retain the old, useful fallback of listing every readable chapter.
+  const hasOfficialToc = chs.some(ch => ch.tocListed);
+  const toc = hasOfficialToc ? chs.filter(ch => ch.tocListed) : chs;
+  return { filePath, title: bookTitle || path.basename(filePath), flat, chapters: chs, toc, total: flat.length };
 }
 
 async function loadBookFromDisk(filePath) {
@@ -267,16 +273,17 @@ function activate(context) {
   async function jumpChapter() {
     if (!S.book) return;
     const current = chapterOf(S.book, S.line);
+    const entries = S.book.toc && S.book.toc.length ? S.book.toc : S.book.chapters;
     const picked = await vscode.window.showQuickPick(
-      S.book.chapters.map((c, i) => ({
+      entries.map((c, i) => ({
         label: `${String(i + 1).padStart(3)} · ${c.title.slice(0, 48)}`,
-        description: i === current ? '当前章' : '',
-        i,
+        description: c === S.book.chapters[current] ? '当前章' : '',
+        chapter: c,
       })),
-      { placeHolder: `目录 · ${S.book.chapters.length} 章（跳转到…）`, matchOnDescription: false },
+      { placeHolder: `目录 · ${entries.length} 章（跳转到…）`, matchOnDescription: false },
     );
     if (!picked) return;                       // Esc: back to reading, terminal keeps focus
-    S.line = S.book.chapters[picked.i].start;
+    S.line = picked.chapter.start;
     S.notesVisible = false; S.tick++;
     saveBooks(); render();
   }

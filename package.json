@@ -2,7 +2,7 @@
   "name": "moreover-reader",
   "displayName": "Moreover Reader",
   "description": "在 VS Code 终端里伪装成 AI 编码会话摸鱼读小说。d 切换显示、失焦自动隐藏、i 看插图、e 看注解、a 自动滚动。支持 EPUB/TXT。",
-  "version": "1.3.5",
+  "version": "1.3.7",
   "publisher": "wisonic",
   "engines": { "vscode": "^1.80.0" },
   "categories": ["Other"],
