@@ -1,0 +1,22 @@
+extension.js
+  s_feae8e358a06b6::t_aa421a73bd1de9 183-186
+  s_feae8e358a06b6::t_bb045c7dc5ade6 146-155,158,164,167,169-179,181-182,188,273
+package.json
+  s_feae8e358a06b6::t_aa421a73bd1de9 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5da3669d83f89cf228a918fb64cf2f9f62fa8084",
+  "prompts": {},
+  "sessions": {
+    "s_feae8e358a06b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0a9b4-ad10-7880-a631-a19b433dff46",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "wisonic <4225692+wisonic@users.noreply.github.com>"
+    }
+  }
+}
