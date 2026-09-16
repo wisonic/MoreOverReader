@@ -143,25 +143,49 @@ function activate(context) {
   function hide() { if (S.visible) { S.visible = false; render(); } }
 
   // ---------------------------------------------------------- image popup
+  function closeImage() {
+    clearTimeout(S.imgTimer);
+    S.imgTimer = null;
+    const panel = S.imgPanel;
+    // Clear this synchronously: onDidDispose can arrive after another preview
+    // has opened, and must not affect that newer panel or its timer.
+    S.imgPanel = null;
+    if (panel) panel.dispose();
+  }
+
   function showImage(hold) {
     // toggle: if already open, pressing i again closes it
-    if (S.imgPanel) { S.imgPanel.dispose(); return; }
+    if (S.imgPanel) { closeImage(); return; }
     if (!S.book) return;
     let i = S.line;
     while (i >= 0 && (!S.book.flat[i] || S.book.flat[i].t !== 'img')) i--;
     if (i < 0) return status('附近没有插图');
     const src = S.book.flat[i].src;
-    S.imgPanel = vscode.window.createWebviewPanel(
+    const panel = vscode.window.createWebviewPanel(
       'moreoverReader.image', 'Preview',
       { viewColumn: vscode.ViewColumn.Active, preserveFocus: true },
-      {},
+      { enableScripts: true },
     );
-    S.imgPanel.onDidDispose(() => { S.imgPanel = null; clearTimeout(S.imgTimer); });
-    S.imgPanel.webview.html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+    S.imgPanel = panel;
+    panel.onDidDispose(() => {
+      if (S.imgPanel !== panel) return;
+      S.imgPanel = null;
+      clearTimeout(S.imgTimer);
+      S.imgTimer = null;
+    });
+    panel.webview.onDidReceiveMessage(message => {
+      if (message && message.type === 'closeImage' && S.imgPanel === panel) closeImage();
+    });
+    panel.webview.html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
       'body{margin:0;background:#fff;display:flex;align-items:center;justify-content:center;height:100vh}' +
-      'img{max-width:100%;max-height:100%}</style></head><body><img src="' + src + '"></body></html>';
+      'img{max-width:100%;max-height:100%}</style></head><body><img src="' + src + '">' +
+      '<script>const v=acquireVsCodeApi();addEventListener("keydown",e=>{if(e.key.toLowerCase()==="i"){e.preventDefault();v.postMessage({type:"closeImage"})}})</script></body></html>';
+    // A webview can steal the terminal's input focus on some VS Code versions
+    // despite preserveFocus. Return focus explicitly so a second `i` reaches
+    // the Pseudoterminal and toggles this panel off immediately.
+    if (S.term) S.term.show();
     clearTimeout(S.imgTimer);
-    if (!hold) S.imgTimer = setTimeout(() => S.imgPanel && S.imgPanel.dispose(), 3000);
+    if (!hold) S.imgTimer = setTimeout(() => { if (S.imgPanel === panel) closeImage(); }, 3000);
   }
 
   // ---------------------------------------------------------- paging
@@ -246,7 +270,7 @@ function activate(context) {
     S.book = null; S.visible = false;
     render();
     if (S.term) { S.term.dispose(); S.term = null; S.pty = null; }
-    if (S.imgPanel) S.imgPanel.dispose();
+    closeImage();
     status('已停止阅读');
   }
 
