@@ -108,6 +108,10 @@ function isGenericDocumentTitle(title) {
   return /^(?:text|part|chapter|section|content|index|file)[_\s-]*\d*(?:[_\s-]*(?:split|part)[_\s-]*\d+)?\.x?html?$/i.test(title);
 }
 
+function isUnusableDocumentTitle(title) {
+  return !title || isGenericDocumentTitle(title) || /^(?:未知|无标题|unknown|untitled)$/i.test(title.trim());
+}
+
 function stripTags(s) {
   return decodeEntities(String(s).replace(/<[^>]+>/g, ''));
 }
@@ -271,7 +275,7 @@ function xhtmlToBlocks(html, resolveImg, resolveNote) {
   // Many converter-produced EPUBs use titles such as "text00007.html" for
   // every XHTML file. They are implementation filenames, not useful table of
   // contents labels; prefer the first visible heading in that case.
-  if (!title || isGenericDocumentTitle(title)) {
+  if (isUnusableDocumentTitle(title)) {
     const hm = /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/i.exec(html);
     if (hm) {
       const heading = stripTags(hm[1]).replace(/\s+/g, ' ').trim();
@@ -404,7 +408,7 @@ function parseEpub(buffer) {
     const lines = blocks.reduce((n, b) => n + (b.t === 'l' ? 1 : 0), 0);
     if (!blocks.length) continue;
     const navTitle = ncxTitles.get(filePath);
-    const displayTitle = (!title || isGenericDocumentTitle(title)) ? (navTitle || title) : title;
+    const displayTitle = isUnusableDocumentTitle(title) ? (navTitle || title) : title;
     chapters.push({
       title: displayTitle || item.href, blocks, notes, noteRefs, lines,
       // Keep the spine document readable, but let the UI distinguish entries
