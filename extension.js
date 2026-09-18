@@ -260,8 +260,10 @@ function activate(context) {
   function toggleAuto() {
     autoOn = !autoOn;
     clearInterval(S.autoTimer);
-    if (autoOn) S.autoTimer = setInterval(() => { S.visible = true; step(1); }, 3000);
-    status(autoOn ? '自动滚动开（3s/行）' : '自动滚动关');
+    const cfg = vscode.workspace.getConfiguration('moreoverReader');
+    const intervalMs = Math.max(1000, Number(cfg.get('autoScrollInterval', 4000)) || 4000);
+    if (autoOn) S.autoTimer = setInterval(() => { S.visible = true; step(1); }, intervalMs);
+    status(autoOn ? `自动滚动开（${(intervalMs / 1000).toFixed(intervalMs % 1000 ? 1 : 0)}s/行）` : '自动滚动关');
   }
 
   function stop() {
@@ -349,8 +351,10 @@ function activate(context) {
       `移除《${name}》？阅读进度会一起删除`, { modal: true }, '移除',
     );
     if (!ok) return;
-    delete S.books[fsPath];
+    // stop() saves the active book's progress. It must run before deletion or
+    // it would put the just-removed book straight back onto the shelf.
     if (S.book && S.book.filePath === fsPath) stop();
+    delete S.books[fsPath];
     await context.workspaceState.update('moreover.books', S.books);
     shelf.refresh();
     status('已移除《' + name + '》');
