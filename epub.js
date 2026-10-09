@@ -225,7 +225,10 @@ function extractNoteRefs(html, notes, resolveNote) {
     // source block from the chapter currently being rendered.
     if (!notes.includes(note)) notes.push({ ...note, local: false });
     const label = stripTags(m[2]).replace(/\s+/g, ' ').trim();
-    const marker = noteNumber(label);
+    // Some books use a linked image (often a magnifying glass) instead of
+    // visible text for the reference. In that case the matching note usually
+    // contains its number at the start, e.g. "[1] …".
+    const marker = noteNumber(label) || noteNumber(note.text.match(/^\s*([^\s]+)/)?.[1] || '');
     if (marker && !refs[marker]) refs[marker] = note.id;
   }
   return refs;
@@ -236,7 +239,9 @@ function normalizeNoteMarkers(html, resolveNote) {
   return html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (whole, attrs, inner) => {
     const href = attr(attrs, 'href');
     if (!href || href.lastIndexOf('#') < 0 || !resolveNote || !resolveNote(href)) return whole;
-    const n = noteNumber(stripTags(inner));
+    const note = resolveNote(href);
+    const n = noteNumber(stripTags(inner)) ||
+      noteNumber(note && note.text.match(/^\s*([^\s]+)/)?.[1] || '');
     return n ? `<a${attrs}>[${n}]</a>` : whole;
   });
 }
