@@ -1,0 +1,23 @@
+package.json
+  s_85dfd2cdb9a3b9::t_56c34c62c7b157 5,7-25,55-62,98-101
+epub.js
+  s_85dfd2cdb9a3b9::t_eb1aebf9d64bdf 228-231,242-244
+package-lock.json
+  s_85dfd2cdb9a3b9::t_1130c79a7ce3f2 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e4b36c89e30832d9ac93b3610b6b9e7000529ed4",
+  "prompts": {},
+  "sessions": {
+    "s_85dfd2cdb9a3b9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11f65-8d5d-7900-9539-e7440e30e5c3",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "wisonic <4225692+wisonic@users.noreply.github.com>"
+    }
+  }
+}
