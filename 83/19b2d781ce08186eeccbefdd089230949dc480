@@ -1,0 +1,31 @@
+package.json
+  s_777fe35c238301::t_52f0e5c1422149 5
+README.md
+  s_777fe35c238301::t_903ef6d352863e 78
+extension.js
+  s_777fe35c238301::t_0a4598db51a286 418-420,422-425,427-429
+  s_777fe35c238301::t_20b7827c804fd2 112-113,115,121,312-319,322-323,353-359,361-363,386
+  s_777fe35c238301::t_dec1f8b83bc400 412-417,421,426,430-435
+  s_777fe35c238301::t_3354b848598c69 116
+  s_777fe35c238301::t_681652630ab107 360
+frame.js
+  s_777fe35c238301::t_d0ee4723b9dedc 65-70,78,126
+package-lock.json
+  s_777fe35c238301::t_ea1d7040b202a8 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8319b2d781ce08186eeccbefdd089230949dc480",
+  "prompts": {},
+  "sessions": {
+    "s_777fe35c238301": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12f4f-8ad5-7c22-9a08-d3bcd73fe5d1",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "wisonic <4225692+wisonic@users.noreply.github.com>"
+    }
+  }
+}
