@@ -62,6 +62,12 @@ function charW(cp) {
   return 1;
 }
 
+/** Match the integer setting schema and String.repeat()'s actual behavior. */
+function normalizeLetterSpacing(value) {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 && n <= 2 ? n : 0;
+}
+
 /**
  * Pre-wrap a paragraph into reading lines of ≤maxCols terminal columns.
  * Never cuts inside a [n]/(n)/（n） marker so footnote chips stay whole.
@@ -69,6 +75,7 @@ function charW(cp) {
  */
 function wrapText(text, maxCols = 82, letterSpacing = 0) {
   const s = String(text);
+  letterSpacing = normalizeLetterSpacing(letterSpacing);
   const ranges = [];
   { const re = /([[(（])(\d{1,3})([\])）])/g; let m;
     while ((m = re.exec(s)) !== null) ranges.push([m.index, m.index + m[0].length]); }
@@ -116,6 +123,7 @@ function rgbAnsi(hex) {
 }
 
 function addLetterSpacing(text, spacing) {
+  spacing = normalizeLetterSpacing(spacing);
   const chars = Array.from(String(text));
   return chars.length > 1 && spacing ? chars.join(' '.repeat(spacing)) : String(text);
 }

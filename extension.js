@@ -109,12 +109,16 @@ function activate(context) {
     imgPanel: null, imgTimer: null, autoTimer: null,
     books: {},
   };
+  // globalState shares the shelf and progress across workspace folders/windows.
+  // Import entries from older workspace-local installations once per key.
   Object.assign(S.books, context.workspaceState.get('moreover.books', {}));
+  Object.assign(S.books, context.globalState.get('moreover.books', {}));
+  context.globalState.update('moreover.books', S.books);
   const shelf = new ShelfProvider(() => S.books, p => loadBook(p));
 
   function saveBooks() {
     if (S.book) S.books[S.book.filePath] = { line: S.line };
-    context.workspaceState.update('moreover.books', S.books);
+    context.globalState.update('moreover.books', S.books);
     shelf.refresh();
   }
 
@@ -305,11 +309,18 @@ function activate(context) {
   async function jumpChapter() {
     if (!S.book) return;
     const current = chapterOf(S.book, S.line);
-    const entries = S.book.toc && S.book.toc.length ? S.book.toc : S.book.chapters;
+    const entries = [...(S.book.toc && S.book.toc.length ? S.book.toc : S.book.chapters)];
+    const currentChapter = S.book.chapters[current];
+    // The formal EPUB TOC may omit readable spine sections. Include the current
+    // section anyway so the current location can always be marked.
+    if (!entries.includes(currentChapter)) {
+      entries.push(currentChapter);
+      entries.sort((a, b) => a.start - b.start);
+    }
     const picked = await vscode.window.showQuickPick(
       entries.map((c, i) => ({
-        label: `${String(i + 1).padStart(3)} · ${c.title.slice(0, 48)}`,
-        description: c === S.book.chapters[current] ? '当前章' : '',
+        label: `${c === currentChapter ? '▶ ' : '  '}${String(i + 1).padStart(3)} · ${c.title.slice(0, 48)}${c === currentChapter ? '（当前章）' : ''}`,
+        description: '',
         chapter: c,
       })),
       { placeHolder: `目录 · ${entries.length} 章（跳转到…）`, matchOnDescription: false },
@@ -339,6 +350,17 @@ function activate(context) {
     render();
   }
 
+  context.subscriptions.push(vscode.window.onDidCloseTerminal(closed => {
+    if (closed !== S.term) return;
+    saveBooks();
+    S.term = null;
+    S.pty = null;
+    clearInterval(S.autoTimer);
+    S.autoTimer = null;
+    autoOn = false;
+    closeImage();
+  }));
+
   async function loadBook(fsPath) {
     let book;
     try { book = await loadBookFromDisk(fsPath); }
@@ -361,7 +383,7 @@ function activate(context) {
     // it would put the just-removed book straight back onto the shelf.
     if (S.book && S.book.filePath === fsPath) stop();
     delete S.books[fsPath];
-    await context.workspaceState.update('moreover.books', S.books);
+    await context.globalState.update('moreover.books', S.books);
     shelf.refresh();
     status('已移除《' + name + '》');
   }
@@ -387,7 +409,30 @@ function activate(context) {
 
   context.subscriptions.push(vscode.window.registerTreeDataProvider('moreoverReader.shelf', shelf));
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-    if (e.affectsConfiguration('moreoverReader')) render();
+    if (e.affectsConfiguration('moreoverReader.columns') ||
+        e.affectsConfiguration('moreoverReader.letterSpacing')) {
+      // Books are pre-wrapped when loaded; rebuild the current one when its
+      // wrapping settings change so the user does not have to reopen it.
+      if (S.book) {
+        const oldBook = S.book;
+        const oldChapterIndex = chapterOf(oldBook, S.line);
+        const oldChapter = oldBook.chapters[oldChapterIndex];
+        const chapterOffset = S.line - oldChapter.start;
+        loadBookFromDisk(oldBook.filePath).then(book => {
+          const chapter = book.chapters[oldChapterIndex] &&
+            book.chapters[oldChapterIndex].title === oldChapter.title
+            ? book.chapters[oldChapterIndex]
+            : book.chapters.find(ch => ch.title === oldChapter.title);
+          S.book = book;
+          S.line = chapter
+            ? Math.min(chapter.start + chapterOffset, chapter.end - 1)
+            : Math.min(S.line, book.total - 1);
+          render();
+        }).catch(err => vscode.window.showErrorMessage('Moreover: ' + err.message));
+      }
+    } else if (e.affectsConfiguration('moreoverReader')) {
+      render();
+    }
   }));
 }
 
