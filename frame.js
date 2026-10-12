@@ -28,12 +28,13 @@ const FILLERS = [
 
 /** Dim work lines shown INSTEAD of book text when hidden — same line count,
  *  so hiding never changes the frame height (no jitter). Deterministic per seed. */
-function buildFiller(seed, count) {
+function buildFiller(seed, count, lineSpacing = 0) {
   const out = [];
   for (let i = 0; i < count; i++) {
     out.push(C.dim + FILLERS[(seed + i) % FILLERS.length] + C.reset);
   }
-  return out;
+  const gap = '\r\n'.repeat(lineSpacing + 1);
+  return out.join(gap);
 }
 
 function fmtElapsed(ms) {
@@ -66,13 +67,13 @@ function charW(cp) {
  * Never cuts inside a [n]/(n)/（n） marker so footnote chips stay whole.
  * No ellipsis — the full text is preserved across the wrapped lines.
  */
-function wrapText(text, maxCols = 82) {
+function wrapText(text, maxCols = 82, letterSpacing = 0) {
   const s = String(text);
   const ranges = [];
   { const re = /([[(（])(\d{1,3})([\])）])/g; let m;
     while ((m = re.exec(s)) !== null) ranges.push([m.index, m.index + m[0].length]); }
   const chars = Array.from(s);
-  const widths = chars.map(c => charW(c.codePointAt(0)));
+  const widths = chars.map((c, i) => charW(c.codePointAt(0)) + (i < chars.length - 1 ? letterSpacing : 0));
   const out = [];
   let chunkStart = 0, w = 0;
   for (let i = 0; i < chars.length; i++) {
@@ -102,6 +103,39 @@ function buildBookWindow(book, line, count) {
     else out.push('  ' + b.text);
   }
   return out.join('\r\n');
+}
+
+function rgbAnsi(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
+  if (!m) return '';
+  const value = m[1];
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `\x1b[38;2;${r};${g};${b}m`;
+}
+
+function addLetterSpacing(text, spacing) {
+  const chars = Array.from(String(text));
+  return chars.length > 1 && spacing ? chars.join(' '.repeat(spacing)) : String(text);
+}
+
+function buildStyledBookWindow(book, line, count, options = {}) {
+  const { color = '', lineSpacing = 0, letterSpacing = 0 } = options;
+  const tint = rgbAnsi(color);
+  const rows = [];
+  const from = Math.max(0, line - Math.max(1, count) + 1);
+  for (let i = from; i <= line; i++) {
+    const b = book.flat[i];
+    if (!b) continue;
+    let row;
+    if (b.head) row = C.bold + (tint || C.cyan) + addLetterSpacing(b.text, letterSpacing) + C.reset;
+    else if (b.t === 'img') row = C.dim + '  [插图 · 按 i 查看]' + C.reset;
+    else row = '  ' + tint + addLetterSpacing(b.text, letterSpacing) + (tint ? C.reset : '');
+    rows.push(row);
+  }
+  const gap = '\r\n'.repeat(lineSpacing + 1);
+  return rows.join(gap);
 }
 
 /** Notes block: all currently shown notes, each on its own line. */
@@ -139,13 +173,13 @@ function buildFrame(s) {
   parts.push('');
   if (s.book) {
     if (s.visible) {
-      parts.push(buildBookWindow(s.book, s.line, s.lines || 3));
+      parts.push(buildStyledBookWindow(s.book, s.line, s.lines || 3, s.textStyle));
       if (s.notesVisible && s.notes && s.notes.length) {
         parts.push(buildNotes(s.notes));
       }
     } else {
       // hidden: same number of dim work lines so the frame height never jumps
-      parts.push(buildFiller(s.tick || 0, s.lines || 3).join('\r\n'));
+      parts.push(buildFiller(s.tick || 0, s.lines || 3, (s.textStyle && s.textStyle.lineSpacing) || 0));
     }
     if (s.afterText) {
       parts.push('');
@@ -164,4 +198,4 @@ function buildFrame(s) {
   return '\x1b[2J\x1b[3J\x1b[H' + parts.join('\r\n');
 }
 
-module.exports = { buildFrame, buildBookWindow, buildNotes, buildStatus, wrapText, C, fmtElapsed, bar };
+module.exports = { buildFrame, buildBookWindow, buildStyledBookWindow, buildNotes, buildStatus, wrapText, C, fmtElapsed, bar };

@@ -21,13 +21,14 @@ function buildBook(filePath, bookTitle, chapters) {
   const chs = [];
   const cfg = vscode.workspace.getConfiguration('moreoverReader');
   const cols = cfg.get('columns', 82);
+  const letterSpacing = cfg.get('letterSpacing', 0);
   chapters.forEach(ch => {
     const start = flat.length;
     flat.push({ t: 'l', text: '# ' + ch.title, head: true });
     ch.blocks.forEach(b => {
       if (b.t === 'l') {
         // pre-wrap each paragraph to reading lines so every visual row is complete
-        wrapText(b.text, cols).forEach(piece => flat.push({ t: 'l', text: piece }));
+        wrapText(b.text, cols, letterSpacing).forEach(piece => flat.push({ t: 'l', text: piece }));
       } else {
         flat.push(b);
       }
@@ -132,6 +133,11 @@ function activate(context) {
       lines: cfg.get('lines', 3),
       chapter: chapterHint(),
       notes: S.notes, notesVisible: S.notesVisible,
+      textStyle: {
+        color: cfg.get('textColor', ''),
+        lineSpacing: cfg.get('lineSpacing', 0),
+        letterSpacing: cfg.get('letterSpacing', 0),
+      },
       afterText: buildAfter(S.tick),
       elapsedMs: Date.now() - START,
       cost: '16.17', model: 'opus-4.8[1m]',
@@ -380,6 +386,9 @@ function activate(context) {
   reg('moreoverReader.removeShelfItem', (item) => removeBookByPath(item && item.path));
 
   context.subscriptions.push(vscode.window.registerTreeDataProvider('moreoverReader.shelf', shelf));
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration('moreoverReader')) render();
+  }));
 }
 
 function deactivate() {}

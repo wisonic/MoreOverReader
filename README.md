@@ -84,7 +84,12 @@ Notes: API 返回 nextCursor=null 时应停止请求，避免重复拉最后一�
 |---|---|---|
 | `moreoverReader.lines` | `3` | 同时显示的正文行数（1–50，越小越隐蔽） |
 | `moreoverReader.columns` | `82` | 正文折行的终端列宽（中文按 2 列计；段落预折行、内容零省略、`[n]` 标记不切断） |
+| `moreoverReader.textColor` | `""` | 正文颜色，RGB 十六进制，如 `#D4D4D4`；留空使用终端主题颜色 |
+| `moreoverReader.lineSpacing` | `0` | 正文每行间额外空行数（0–2） |
+| `moreoverReader.letterSpacing` | `0` | 正文字符间插入的空格数（0–2）；增加后每行容纳的字数会减少。修改后重新打开当前图书以重新折行 |
 | `moreoverReader.autoScrollInterval` | `4000` | 自动滚动每行停留时长，单位毫秒（1000–60000） |
+
+终端中的单独正文字号无法由扩展设置，因为 VS Code 的 Pseudoterminal 对整个终端共用字号。需要放大时，在 VS Code `settings.json` 中设置 `"terminal.integrated.fontSize": 16`；这会影响所有集成终端。
 
 ## 打包安装
 

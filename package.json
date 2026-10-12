@@ -2,7 +2,7 @@
   "name": "moreover-reader",
   "displayName": "Moreover Reader",
   "description": "在 VS Code 终端里伪装成 AI 编码会话摸鱼读小说。d 切换显示、失焦自动隐藏、i 看插图、e 看注解、a 自动滚动。支持 EPUB/TXT。",
-  "version": "1.3.12",
+  "version": "1.3.13",
   "publisher": "wisonic",
   "engines": {
     "vscode": "^1.80.0"
@@ -40,6 +40,26 @@
         "minimum": 40,
         "maximum": 200,
         "description": "正文每行折行的终端列宽（中文按 2 列计，默认 82）"
+      },
+      "moreoverReader.textColor": {
+        "type": "string",
+        "default": "",
+        "pattern": "^$|^#?[0-9a-fA-F]{6}$",
+        "description": "正文文字颜色（RGB 十六进制，如 #D4D4D4；留空时使用终端默认颜色）"
+      },
+      "moreoverReader.lineSpacing": {
+        "type": "integer",
+        "default": 0,
+        "minimum": 0,
+        "maximum": 2,
+        "description": "正文每行之间额外插入的空行数（0–2）"
+      },
+      "moreoverReader.letterSpacing": {
+        "type": "integer",
+        "default": 0,
+        "minimum": 0,
+        "maximum": 2,
+        "description": "正文每个字符之间插入的空格数（0–2；加大后每行可容纳的字数会减少）"
       },
       "moreoverReader.autoScrollInterval": {
         "type": "number",
